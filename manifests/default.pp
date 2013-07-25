@@ -55,15 +55,19 @@ class { 'postgresql':
 } ->
 class { 'postgresql::server':
   config_hash => {
-    'ipv4acls' => ['local all all md5'],
+    'ip_mask_deny_postgres_user' => '0.0.0.0/32',
+    'ip_mask_allow_all_users'    => '0.0.0.0/0',
+    'listen_addresses'           => '*',
+    'ipv4acls'                   => ['local all all md5'],
+    'manage_pg_hba_conf'         => false,
   }
 } ->
 package { 'postgresql-contrib-9.2':
 } ->
-postgresql::role { 'zaiste':
+postgresql::role { 'dbuser':
   createdb => true,
   login => true,
-  password_hash => postgresql_password("zaiste", "zaiste")
+  password_hash => postgresql_password("dbuser", "dbuser")
 } ->
 exec { "install_ruby_build":
   command => "git clone https://github.com/sstephenson/ruby-build.git && cd ruby-build && sudo ./install.sh",
@@ -73,15 +77,15 @@ exec { "install_ruby_build":
   logoutput => true,
 } ->
 exec { "install_ruby":
-  command => "ruby-build 2.0.0-rc2 /home/vagrant/.rubies/ruby-2.0.0-rc2",
+  command => "ruby-build 2.0.0-p247 /home/vagrant/.rubies/ruby-2.0.0-p247",
   cwd => $home,
-  creates => "/home/vagrant/.rubies/ruby-2.0.0-rc2",
+  creates => "/home/vagrant/.rubies/ruby-2.0.0-p247",
   timeout => 600,
   path => "/usr/local/bin:/usr/bin/:/bin/",
   logoutput => true,
 } ->
 exec { "install_chruby":
-  command => "wget -O chruby-0.3.4.tar.gz https://github.com/postmodern/chruby/archive/v0.3.4.tar.gz && tar -xzvf chruby-0.3.4.tar.gz && cd chruby-0.3.4/ && sudo make install",
+  command => "wget -O chruby-0.3.6.tar.gz https://github.com/postmodern/chruby/archive/v0.3.6.tar.gz && tar -xzvf chruby-0.3.6.tar.gz && cd chruby-0.3.6/ && sudo make install",
   cwd => $home,
   creates => '/usr/local/bin/chruby-exec',
   path => "/usr/local/bin:/usr/bin/:/bin/",
@@ -93,6 +97,6 @@ source /usr/local/share/chruby/chruby.sh
 source /usr/local/share/chruby/auto.sh'
 } ->
 file_line { "default_chruby":
-  line => "chruby ruby-2.0.0-rc2",
+  line => "chruby ruby-2.0.0-p247",
   path => '/home/vagrant/.bashrc'
 }
